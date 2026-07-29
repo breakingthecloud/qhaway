@@ -1,4 +1,4 @@
-import type { QhawaySpan, QhawayStorage } from '../trace.js';
+import type { QhawaySpan, QhawayStorage } from './index.js';
 
 export interface KVNamespace {
   put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;

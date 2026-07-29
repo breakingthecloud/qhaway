@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { QhawayTrace } from './trace.js';
-import { ConsoleStorage } from './storage/console.js';
+import { QhawayTrace } from './index.js';
+import { ConsoleStorage } from './console.js';
 
 // Mock StyrRouter — simulates a real LLM call with usage data
 function createMockRouter() {

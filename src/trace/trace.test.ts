@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { QhawayTrace } from './trace.js';
-import type { QhawaySpan, QhawayStorage } from './trace.js';
+import { QhawayTrace } from './index.js';
+import type { QhawaySpan, QhawayStorage } from './index.js';
 
 class MockStorage implements QhawayStorage {
   spans: QhawaySpan[] = [];

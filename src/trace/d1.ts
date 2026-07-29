@@ -1,4 +1,4 @@
-import type { QhawaySpan, QhawayStorage } from '../trace.js';
+import type { QhawaySpan, QhawayStorage } from './index.js';
 
 export interface D1Database {
   prepare(sql: string): D1PreparedStatement;

@@ -1,4 +1,4 @@
-import type { QhawaySpan, QhawayStorage } from '../trace.js';
+import type { QhawaySpan, QhawayStorage } from './index.js';
 
 export class ConsoleStorage implements QhawayStorage {
   async write(span: QhawaySpan): Promise<void> {

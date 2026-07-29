@@ -1,29 +1,16 @@
 {
-  "name": "@carloscortezcloud/qhaway-trace",
-  "version": "0.1.0",
-  "description": "Zero-dependency agent observability. Capture cost, latency, tokens per LLM call. Export to OTEL, D1, MLflow.",
+  "name": "@carloscortezcloud/qhaway",
+  "version": "0.2.0",
+  "description": "Agent observability. Trace, cost, OTEL, Tinkuy plugin — all in one package.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./console": {
-      "types": "./dist/storage/console.d.ts",
-      "import": "./dist/storage/console.js"
-    },
-    "./d1": {
-      "types": "./dist/storage/d1.d.ts",
-      "import": "./dist/storage/d1.js"
-    },
-    "./kv": {
-      "types": "./dist/storage/kv.d.ts",
-      "import": "./dist/storage/kv.js"
-    }
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./trace": { "types": "./dist/trace/index.d.ts", "import": "./dist/trace/index.js" },
+    "./cost": { "types": "./dist/cost/index.d.ts", "import": "./dist/cost/index.js" },
+    "./otel": { "types": "./dist/otel/index.d.ts", "import": "./dist/otel/index.js" },
+    "./tinkuy": { "types": "./dist/tinkuy/index.d.ts", "import": "./dist/tinkuy/index.js" }
   },
   "scripts": {
     "build": "tsc",
@@ -31,21 +18,10 @@
     "test:watch": "vitest",
     "prepublishOnly": "npm run build"
   },
-  "keywords": [
-    "observability",
-    "llm",
-    "otel",
-    "tracing",
-    "agent",
-    "cost",
-    "finops"
-  ],
+  "keywords": ["observability", "llm", "otel", "tracing", "agent", "cost", "finops"],
   "author": "Carlos Cortez <carlos@finoptix.dev>",
   "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/breakingthecloud/qhaway"
-  },
+  "repository": { "type": "git", "url": "git+https://github.com/breakingthecloud/qhaway.git" },
   "devDependencies": {
     "@carloscortezcloud/styrr-llm": "^0.4.0",
     "typescript": "^5.5.0",
