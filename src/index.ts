@@ -1,6 +1,7 @@
 export { QhawayTrace } from './trace/index.js';
 export type { QhawaySpan, QhawayStorage } from './trace/index.js';
 export { ConsoleStorage } from './trace/console.js';
+export { MemoryStorage } from './trace/memory.js';
 export { D1Storage } from './trace/d1.js';
 export type { D1Database } from './trace/d1.js';
 export { KVStorage } from './trace/kv.js';
@@ -12,3 +13,6 @@ export { aggregateByUser, aggregateByModel, aggregateByAgent, aggregateByDay, ge
 
 export { QhawayOtelExporter, QhawayOtelStorage, CompositeStorage, buildTracePayload, buildMetricsPayload } from './otel/index.js';
 export type { OtelConfig } from './otel/index.js';
+
+export { serveMetrics } from './serve.js';
+export type { ServeMetricsConfig } from './serve.js';

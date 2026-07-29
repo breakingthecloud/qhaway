@@ -17,10 +17,10 @@ describe('qhaway-dashboard.json', () => {
     expect(dashboard.editable).toBe(true);
   });
 
-  it('requires Prometheus data source', () => {
-    const promReq = dashboard.__requires.find((r: any) => r.id === 'prometheus');
-    expect(promReq).toBeDefined();
-    expect(promReq.type).toBe('datasource');
+  it('panels reference Prometheus data source', () => {
+    const panel = dashboard.panels[0];
+    expect(panel.datasource.type).toBe('prometheus');
+    expect(panel.datasource.uid).toBe('prometheus-uid');
   });
 
   it('has 6 panels', () => {
