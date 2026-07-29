@@ -14,9 +14,10 @@
   },
   "scripts": {
     "build": "tsc",
+    "dev": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "pnpm build"
   },
   "keywords": ["observability", "llm", "otel", "tracing", "agent", "cost", "finops"],
   "author": "Carlos Cortez <carlos@finoptix.dev>",
