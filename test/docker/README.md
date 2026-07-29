@@ -112,6 +112,7 @@ Wait ~10s for initial data, then open:
 | **metrics** | 9090 | Node.js server generating random Qhaway metrics every request |
 | **prometheus** | 9091 | Scrapes metrics every 5s, stores time series |
 | **grafana** | 3000 | Pre-provisioned dashboard with 6 panels |
+| **mlflow** | 5000 | MLflow Tracking server for experiment metrics |
 
 ### Dashboard Panels
 
