@@ -127,6 +127,48 @@ pnpm tsx test/mlflow/example.mjs
 docker compose logs -f mlflow
 ```
 
+## Test Results (live run)
+
+Running `EXPERIMENT=qhaway-mlflow-test npx tsx test/mlflow/example.mjs` against Docker MLflow v2.16.0:
+
+```
+Exporting 3 spans to MLflow at http://localhost:5001...
+Experiment: qhaway-mlflow-test
+Sessions: session-demo-1, session-demo-2
+✅ Done!
+```
+
+2 runs created (one per session), all 7 metrics logged correctly:
+
+```
+  ┌─ Run: agent-session-demo-1
+  │  Status: FINISHED
+  │  cost_usd:         0.023
+  │  latency_ms:       4600.0
+  │  iterations:       2.0
+  │  prompt_tokens:    1340.0
+  │  completion_tokens:500.0
+  │  successful_calls: 2.0
+  │  failed_calls:     0.0
+  │  models:           gpt-4o
+  │  tools:            agent.run, search_knowledge
+  │  session_id:       session-demo-1
+  │  agent_name:       demo-agent
+  │
+  ┌─ Run: agent-session-demo-2
+  │  Status: FINISHED
+  │  cost_usd:         0.003
+  │  latency_ms:       500.0
+  │  iterations:       1.0
+  │  prompt_tokens:    120.0
+  │  completion_tokens:60.0
+  │  successful_calls: 0.0
+  │  failed_calls:     1.0
+  │  models:           claude-sonnet-4
+  │  session_id:       session-demo-2
+  │  agent_name:       demo-agent
+```
+
 ## Production Considerations
 
 - **MemoryStorage + MLflow:** Use `CompositeStorage` to chain MLflow with MemoryStorage (for `serveMetrics`) and D1 (for persistence)
