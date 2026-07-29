@@ -1,0 +1,67 @@
+import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
+
+describe('qhaway-dashboard.json', () => {
+  const jsonPath = resolve(__dirname, 'qhaway-dashboard.json');
+  const raw = readFileSync(jsonPath, 'utf-8');
+  const dashboard = JSON.parse(raw);
+
+  it('is valid JSON', () => {
+    expect(() => JSON.parse(raw)).not.toThrow();
+  });
+
+  it('has required top-level fields', () => {
+    expect(dashboard.title).toBe('Qhaway — AI Agent Observability');
+    expect(dashboard.schemaVersion).toBeGreaterThanOrEqual(39);
+    expect(dashboard.editable).toBe(true);
+  });
+
+  it('requires Prometheus data source', () => {
+    const promReq = dashboard.__requires.find((r: any) => r.id === 'prometheus');
+    expect(promReq).toBeDefined();
+    expect(promReq.type).toBe('datasource');
+  });
+
+  it('has 6 panels', () => {
+    expect(dashboard.panels).toHaveLength(6);
+  });
+
+  it('panels have expected titles', () => {
+    const titles = dashboard.panels.map((p: any) => p.title);
+    expect(titles).toContain('Daily Spend');
+    expect(titles).toContain('Cost by Model');
+    expect(titles).toContain('Latency P99');
+    expect(titles).toContain('Cost by User');
+    expect(titles).toContain('Token Usage (Input vs Output)');
+    expect(titles).toContain('LLM Calls');
+  });
+
+  it('Daily Spend has USD unit and thresholds', () => {
+    const spend = dashboard.panels.find((p: any) => p.title === 'Daily Spend');
+    expect(spend.fieldConfig.defaults.unit).toBe('usd');
+    expect(spend.fieldConfig.defaults.thresholds.steps).toHaveLength(3);
+  });
+
+  it('Cost by Model uses topk(10)', () => {
+    const panel = dashboard.panels.find((p: any) => p.title === 'Cost by Model');
+    expect(panel.targets[0].expr).toContain('topk(10');
+  });
+
+  it('Latency P99 uses histogram_quantile', () => {
+    const panel = dashboard.panels.find((p: any) => p.title === 'Latency P99');
+    expect(panel.targets[0].expr).toContain('histogram_quantile');
+    expect(panel.fieldConfig.defaults.unit).toBe('s');
+  });
+
+  it('Token Usage has stacking enabled', () => {
+    const panel = dashboard.panels.find((p: any) => p.title === 'Token Usage (Input vs Output)');
+    expect(panel.options.stacking.mode).toBe('normal');
+  });
+
+  it('has alert rule for daily spend', () => {
+    expect(dashboard.alerting).toBeDefined();
+    expect(dashboard.alerting.alerts).toHaveLength(1);
+    expect(dashboard.alerting.alerts[0].title).toContain('Daily spend exceeded');
+  });
+});

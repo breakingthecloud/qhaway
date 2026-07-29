@@ -1,0 +1,144 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0" }
+  ],
+  "title": "Qhaway — AI Agent Observability",
+  "description": "LLM cost, latency, token usage, and call monitoring. Requires a Prometheus data source pointing to the Qhaway Worker /metrics endpoint.",
+  "tags": ["qhaway", "llm", "cost", "observability"],
+  "schemaVersion": 39,
+  "version": 1,
+  "timezone": "browser",
+  "editable": true,
+  "refresh": "30s",
+  "panels": [
+    {
+      "title": "Daily Spend",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 4, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "sum(increase(qhaway_cost_total[24h]))",
+        "legendFormat": "Today",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "usd",
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null },
+            { "color": "yellow", "value": 5 },
+            { "color": "red", "value": 10 }
+          ]}
+        }
+      },
+      "options": { "graphMode": "area", "colorMode": "background", "justifyMode": "center", "orientation": "auto" }
+    },
+    {
+      "title": "Cost by Model",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 8, "x": 4, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "topk(10, sum by(model) (qhaway_cost_total))",
+        "legendFormat": "{{model}}",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": { "unit": "usd", "color": { "mode": "palette-classic" } }
+      },
+      "options": {
+        "orientation": "auto",
+        "groupWidth": 0.7,
+        "showValue": "auto",
+        "legend": { "showViz": true, "placement": "right" }
+      }
+    },
+    {
+      "title": "Latency P99",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "histogram_quantile(0.99, sum by(le) (rate(qhaway_latency_seconds_bucket[5m])))",
+        "legendFormat": "P99 {{model}}",
+        "refId": "A"
+      }],
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "options": { "legend": { "showViz": true, "placement": "bottom" }, "tooltip": { "mode": "multi" } }
+    },
+    {
+      "title": "Cost by User",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "topk(20, sum by(user) (qhaway_cost_total{user!=\"\"}))",
+        "legendFormat": "{{user}}",
+        "refId": "A",
+        "format": "table"
+      }],
+      "fieldConfig": { "defaults": { "unit": "usd", "custom": { "align": "auto" } } },
+      "options": { "showHeader": true }
+    },
+    {
+      "title": "Token Usage (Input vs Output)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "sum(rate(qhaway_tokens_input_total[5m])) by(model)",
+          "legendFormat": "Input — {{model}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(qhaway_tokens_output_total[5m])) by(model)",
+          "legendFormat": "Output — {{model}}",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "options": {
+        "legend": { "showViz": true, "placement": "bottom" },
+        "stacking": { "mode": "normal", "group": "A" }
+      }
+    },
+    {
+      "title": "LLM Calls",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{
+        "expr": "sort_desc(qhaway_calls_total)",
+        "legendFormat": "{{model}} — {{success}}",
+        "refId": "A",
+        "format": "table"
+      }],
+      "fieldConfig": { "defaults": { "custom": { "align": "auto" } } },
+      "options": { "showHeader": true }
+    }
+  ],
+  "alerting": {
+    "alerts": [{
+      "title": "Daily spend exceeded $10",
+      "condition": "A",
+      "frequency": "5m",
+      "for": "5m",
+      "noDataState": "NoData",
+      "execErrState": "Alerting",
+      "conditions": [{
+        "reducer": { "type": "sum" },
+        "evaluator": { "type": "gt", "params": [10] },
+        "operator": { "type": "and" },
+        "query": { "params": ["A", "5m", "now"] }
+      }],
+      "message": "AI spend exceeded $10 today. Current value: {{ $values.A }}.",
+      "annotations": {
+        "summary": "Daily AI spend > $10",
+        "description": "Qhaway cost threshold breached. Review model usage and adjust budget."
+      }
+    }]
+  }
+}
