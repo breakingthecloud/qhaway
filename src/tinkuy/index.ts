@@ -1,42 +1,126 @@
-/**
- * Qhaway Tinkuy Plugin — Auto-instrument TinkuyAgent
- *
- * Hooks into onIteration, onToolCall, onComplete to capture spans.
- *
- * @example
- * import { Agent } from '@carloscortezcloud/tinkuy-agent';
- * import { QhawayTinkuyPlugin } from '@carloscortezcloud/qhaway/tinkuy';
- *
- * const agent = new Agent({
- *   router: styrRouter,
- *   tools: [myTool],
- *   systemPrompt: 'Helpful assistant.',
- *   plugins: [new QhawayTinkuyPlugin({ trace: myQhawayTrace })],
- * });
- */
+import type { QhawaySpan, QhawayStorage } from '../trace/index.js';
 
-import type { QhawayTrace, QhawaySpan } from '../trace/index.js';
+export interface IterationEvent {
+  iteration: number;
+  modelUsed: string;
+  latencyMs: number;
+  hasToolCalls: boolean;
+  toolCalls?: Array<{ id: string; name: string; arguments: Record<string, unknown> }>;
+}
+
+export interface ToolCallEvent {
+  iteration: number;
+  tool: string;
+  arguments: Record<string, unknown>;
+  result: unknown;
+  durationMs: number;
+  error?: string;
+}
+
+export interface CompleteEvent {
+  iterations: number;
+  totalLatencyMs: number;
+  modelsUsed: string[];
+  toolsUsed: string[];
+  result: {
+    text: string;
+    blocked: boolean;
+    blockReason?: string;
+    estimatedCostUsd?: number;
+    iterations: number;
+    toolsUsed: string[];
+    modelsUsed: string[];
+  };
+}
+
+export interface TinkuyPluginHooks {
+  onIteration: (event: IterationEvent) => void;
+  onToolCall: (event: ToolCallEvent) => void;
+  onComplete: (event: CompleteEvent) => void;
+}
 
 export interface TinkuyPluginConfig {
-  trace: QhawayTrace;
+  storage: QhawayStorage;
   agentName?: string;
+  captureToolPayloads?: boolean;
 }
 
 export class QhawayTinkuyPlugin {
-  constructor(private config: TinkuyPluginConfig) {}
+  public sessionId: string;
 
-  onIteration(event: { iteration: number; modelUsed: string; latencyMs: number }): void {
-    // Will be implemented in Sprint 1
-    console.log(`[qhaway/tinkuy] Iteration ${event.iteration}: ${event.modelUsed} (${event.latencyMs}ms)`);
+  constructor(private config: TinkuyPluginConfig) {
+    this.sessionId = crypto.randomUUID();
   }
 
-  onToolCall(event: { tool: string; durationMs: number; error?: string }): void {
-    // Will be implemented in Sprint 1
-    console.log(`[qhaway/tinkuy] Tool call: ${event.tool} (${event.durationMs}ms)`);
+  get hooks(): TinkuyPluginHooks {
+    return {
+      onIteration: (event) => { this.onIteration(event); },
+      onToolCall: (event) => { this.onToolCall(event); },
+      onComplete: (event) => { this.onComplete(event); },
+    };
   }
 
-  onComplete(event: { iterations: number; totalLatencyMs: number; modelsUsed: string[] }): void {
-    // Will be implemented in Sprint 1
-    console.log(`[qhaway/tinkuy] Complete: ${event.iterations} iters, ${event.totalLatencyMs}ms total`);
+  private async onIteration(event: IterationEvent): Promise<void> {
+    const span: QhawaySpan = {
+      id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      model: event.modelUsed,
+      provider: 'unknown',
+      latency_ms: event.latencyMs,
+      tokens_in: 0,
+      tokens_out: 0,
+      cost_usd: 0,
+      agent_id: this.config.agentName,
+      session_id: this.sessionId,
+      success: true,
+    };
+    await this.config.storage.write(span);
+  }
+
+  private async onToolCall(event: ToolCallEvent): Promise<void> {
+    const span: QhawaySpan = {
+      id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      model: '',
+      provider: '',
+      latency_ms: event.durationMs,
+      tokens_in: 0,
+      tokens_out: 0,
+      cost_usd: 0,
+      tool_name: event.tool,
+      agent_id: this.config.agentName,
+      session_id: this.sessionId,
+      success: !event.error,
+      error: event.error,
+      metadata: this.config.captureToolPayloads
+        ? { toolArgs: event.arguments, toolResult: event.result }
+        : undefined,
+    };
+    await this.config.storage.write(span);
+  }
+
+  private async onComplete(event: CompleteEvent): Promise<void> {
+    const span: QhawaySpan = {
+      id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      model: event.modelsUsed.join(',') || 'unknown',
+      provider: 'tinkuy',
+      latency_ms: event.totalLatencyMs,
+      tokens_in: 0,
+      tokens_out: 0,
+      cost_usd: event.result.estimatedCostUsd ?? 0,
+      agent_id: this.config.agentName,
+      session_id: this.sessionId,
+      tool_name: 'agent.run',
+      success: !event.result.blocked,
+      error: event.result.blockReason,
+      metadata: {
+        iterations: event.iterations,
+        toolsUsed: event.toolsUsed,
+        modelsUsed: event.modelsUsed,
+        blocked: event.result.blocked,
+      },
+    };
+    await this.config.storage.write(span);
   }
 }
