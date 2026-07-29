@@ -1,5 +1,5 @@
 import http from 'node:http';
-import type { QhawaySpan, QhawayStorage } from './trace/index.js';
+import type { QhawayStorage } from './trace/index.js';
 import { MemoryStorage } from './trace/memory.js';
 import { generatePrometheusMetrics } from './cost/metrics.js';
 
@@ -16,16 +16,14 @@ export function serveMetrics(config: ServeMetricsConfig = {}): {
   const port = config.port ?? 9090;
   const storage = config.storage ?? new MemoryStorage();
 
-  const server = http.createServer(async (req, res) => {
+  const server = http.createServer(async (req: http.IncomingMessage, res: http.ServerResponse) => {
     if (req.url === '/metrics' && req.method === 'GET') {
       try {
-        const spans = storage.query
-          ? await storage.query()
-          : [];
-        const metrics = generatePrometheusMetrics(spans);
+        const spans = await storage.query?.();
+        const metrics = generatePrometheusMetrics(spans ?? []);
         res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
         res.end(metrics);
-      } catch (err) {
+      } catch {
         res.writeHead(500);
         res.end('Internal Server Error\n');
       }
@@ -42,7 +40,7 @@ export function serveMetrics(config: ServeMetricsConfig = {}): {
 
   const close = (): Promise<void> => {
     return new Promise((resolve, reject) => {
-      server.close((err) => {
+      server.close((err: unknown) => {
         if (err) reject(err);
         else resolve();
       });

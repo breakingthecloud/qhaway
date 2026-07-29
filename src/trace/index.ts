@@ -18,7 +18,7 @@ export interface QhawaySpan {
 
 export interface QhawayStorage {
   write(span: QhawaySpan): Promise<void>;
-  query?(filters: Partial<QhawaySpan>, limit?: number): Promise<QhawaySpan[]>;
+  query?(filters?: Partial<QhawaySpan>, limit?: number): Promise<QhawaySpan[]>;
   aggregate?(field: string, groupBy: string, period?: string): Promise<Record<string, number>>;
   close?(): Promise<void>;
 }
