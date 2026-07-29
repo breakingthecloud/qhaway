@@ -9,3 +9,6 @@ export type { KVNamespace } from './trace/kv.js';
 export { QhawayCost, calculateCost, resolvePricing, getBuiltinPricing, getDefaultPricing } from './cost/index.js';
 export type { ModelPricing, CostConfig, CostAggregation, PrometheusMetrics } from './cost/index.js';
 export { aggregateByUser, aggregateByModel, aggregateByAgent, aggregateByDay, getCostByUser, getCostByModel, getCostByAgent, getCostByDay, generatePrometheusMetrics, computeMetrics } from './cost/index.js';
+
+export { QhawayOtelExporter, QhawayOtelStorage, CompositeStorage, buildTracePayload, buildMetricsPayload } from './otel/index.js';
+export type { OtelConfig } from './otel/index.js';
