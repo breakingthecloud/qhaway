@@ -1,0 +1,29 @@
+{
+  "name": "@carloscortezcloud/qhaway-trace",
+  "version": "0.1.0",
+  "description": "Zero-dependency agent observability. Capture cost, latency, tokens per LLM call. Export to OTEL, D1, MLflow.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./console": { "types": "./dist/storage/console.d.ts", "import": "./dist/storage/console.js" },
+    "./d1": { "types": "./dist/storage/d1.d.ts", "import": "./dist/storage/d1.js" },
+    "./kv": { "types": "./dist/storage/kv.d.ts", "import": "./dist/storage/kv.js" }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["observability", "llm", "otel", "tracing", "agent", "cost", "finops"],
+  "author": "Carlos Cortez <carlos@finoptix.dev>",
+  "license": "Apache-2.0",
+  "repository": { "type": "git", "url": "https://github.com/breakingthecloud/qhaway" },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  },
+  "type": "module"
+}
