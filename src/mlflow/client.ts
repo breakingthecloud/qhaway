@@ -28,13 +28,26 @@ export class MlflowClient {
     });
     if (!res.ok) {
       const body = await res.text();
-      if (res.status === 409) {
-        return name;
+      if (res.status === 409 || body.includes('RESOURCE_ALREADY_EXISTS')) {
+        return this.getExperimentId(name);
       }
       throw new Error(`MLflow create experiment failed: ${res.status} ${body}`);
     }
     const data: MlflowResponse = await res.json();
     return data.experiment_id ?? name;
+  }
+
+  private async getExperimentId(name: string): Promise<string> {
+    const res = await fetch(`${this.uri}/api/2.0/mlflow/experiments/search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ max_results: 100 }),
+    });
+    if (!res.ok) throw new Error(`MLflow search experiments failed: ${res.status}`);
+    const data = await res.json();
+    const exp = data.experiments?.find((e: any) => e.name === name);
+    if (!exp) throw new Error(`MLflow experiment '${name}' not found after creation attempt`);
+    return exp.experiment_id;
   }
 
   async createRun(experimentId: string, runName?: string): Promise<MlflowRunInfo> {
@@ -61,7 +74,7 @@ export class MlflowClient {
     const res = await fetch(`${this.uri}/api/2.0/mlflow/runs/log-metric`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ run_id: runId, key, value, step: step ?? 0 }),
+      body: JSON.stringify({ run_id: runId, key, value, timestamp: Date.now(), step: step ?? 0 }),
     });
     if (!res.ok) {
       const body = await res.text();

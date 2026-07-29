@@ -1,7 +1,7 @@
 import { QhawayMLflow } from '@carloscortezcloud/qhaway/mlflow';
 
 const exporter = new QhawayMLflow({
-  trackingUri: 'http://localhost:5000',
+  trackingUri: 'http://localhost:5001',
   experimentName: 'finops-agent-runs',
 });
 

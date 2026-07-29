@@ -21,7 +21,10 @@ beforeAll(async () => {
     for await (const chunk of req) body += chunk;
     calls.push({ method: req.method!, path: req.url!, body: JSON.parse(body || '{}') });
 
-    if (req.url?.includes('/experiments/create')) {
+    if (req.url?.includes('/experiments/search')) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ experiments: [{ experiment_id: '123', name: 'test-exp' }] }));
+    } else if (req.url?.includes('/experiments/create')) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ experiment_id: '123' }));
     } else if (req.url?.includes('/runs/create')) {
@@ -118,11 +121,14 @@ describe('MlflowClient', () => {
     expect(calls[0].body).toMatchObject({ run_id: 'run-1', status: 'FINISHED' });
   });
 
-  it('handles 409 from experiment create (already exists)', async () => {
+  it('handles experiment already exists', async () => {
     const s = http.createServer((req, res) => {
-      if (req.url?.includes('/experiments/create')) {
-        res.writeHead(409, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error_code: 'RESOURCE_ALREADY_EXISTS' }));
+      if (req.url?.includes('/experiments/search')) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ experiments: [{ experiment_id: 'existing-456', name: 'existing-exp' }] }));
+      } else if (req.url?.includes('/experiments/create')) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error_code: 'RESOURCE_ALREADY_EXISTS', message: 'already exists' }));
       }
     });
     const port = await new Promise<number>((resolve) => {
@@ -131,7 +137,7 @@ describe('MlflowClient', () => {
     extraServers.push(s);
     const client = new MlflowClient({ trackingUri: `http://localhost:${port}` });
     const id = await client.ensureExperiment('existing-exp');
-    expect(id).toBe('existing-exp');
+    expect(id).toBe('existing-456');
   });
 });
 
