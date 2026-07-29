@@ -1,16 +1,33 @@
 {
   "name": "@carloscortezcloud/qhaway",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Agent observability. Trace, cost, OTEL, Tinkuy plugin — all in one package.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
-    "./trace": { "types": "./dist/trace/index.d.ts", "import": "./dist/trace/index.js" },
-    "./cost": { "types": "./dist/cost/index.d.ts", "import": "./dist/cost/index.js" },
-    "./otel": { "types": "./dist/otel/index.d.ts", "import": "./dist/otel/index.js" },
-    "./tinkuy": { "types": "./dist/tinkuy/index.d.ts", "import": "./dist/tinkuy/index.js" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./trace": {
+      "types": "./dist/trace/index.d.ts",
+      "import": "./dist/trace/index.js"
+    },
+    "./cost": {
+      "types": "./dist/cost/index.d.ts",
+      "import": "./dist/cost/index.js"
+    },
+    "./otel": {
+      "types": "./dist/otel/index.d.ts",
+      "import": "./dist/otel/index.js"
+    },
+    "./tinkuy": {
+      "types": "./dist/tinkuy/index.d.ts",
+      "import": "./dist/tinkuy/index.js"
+    }
   },
   "scripts": {
     "build": "tsc",
@@ -19,10 +36,21 @@
     "test:watch": "vitest",
     "prepublishOnly": "pnpm build"
   },
-  "keywords": ["observability", "llm", "otel", "tracing", "agent", "cost", "finops"],
+  "keywords": [
+    "observability",
+    "llm",
+    "otel",
+    "tracing",
+    "agent",
+    "cost",
+    "finops"
+  ],
   "author": "Carlos Cortez <carlos@finoptix.dev>",
   "license": "Apache-2.0",
-  "repository": { "type": "git", "url": "git+https://github.com/breakingthecloud/qhaway.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/breakingthecloud/qhaway.git"
+  },
   "devDependencies": {
     "@carloscortezcloud/styrr-llm": "^0.4.0",
     "typescript": "^5.5.0",
