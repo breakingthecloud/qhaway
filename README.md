@@ -1,14 +1,63 @@
-# 👁️ Qhaway — Agent Observability
+<p align="center">
+  <img alt="Qhaway" src="https://img.shields.io/badge/👁️-Qhaway-8B5CF6?style=for-the-badge" height="50">
+</p>
 
-[![npm version](https://img.shields.io/npm/v/@carloscortezcloud/qhaway?color=blue)](https://www.npmjs.com/package/@carloscortezcloud/qhaway)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.5%2B-3178C6)](https://www.typescriptlang.org)
-[![Zero Deps](https://img.shields.io/badge/dependencies-0-success)](https://github.com/breakingthecloud/qhaway)
+<p align="center">
+  <b>Agent Observability</b><br>
+  Trace, cost, OTEL export, and Grafana dashboards for AI agents. Zero dependencies.
+</p>
 
-Trace, cost, OTEL export, and Grafana dashboards for AI agents. Zero-dependency. Works in Cloudflare Workers, Node.js, Deno, Bun.
+<p align="center">
+  <a href="#quick-start">Quick Start</a>
+  ·
+  <a href="#modules">Modules</a>
+  ·
+  <a href="#exporters">Exporters</a>
+  ·
+  <a href="#ecosystem">Ecosystem</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/npm/v/@carloscortezcloud/qhaway?style=flat-square&logo=npm&color=8B5CF6" alt="npm">
+  <img src="https://img.shields.io/badge/license-Apache_2.0-8B5CF6?style=flat-square" alt="License">
+  <img src="https://img.shields.io/badge/TypeScript-5.5%2B-3178C6?style=flat-square&logo=typescript" alt="TypeScript">
+  <img src="https://img.shields.io/badge/dependencies-0-success?style=flat-square" alt="Zero deps">
+  <img src="https://img.shields.io/badge/works-CF_Workers-8B5CF6?style=flat-square&logo=cloudflare" alt="CF Workers">
+  <img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs">
+</p>
+
+---
+
+## What Is Qhaway?
+
+Qhaway (Quechua: "to observe/watch") wraps every LLM call your agent makes and captures cost, latency, token usage, and model info. Export to OpenTelemetry, Prometheus, or MLflow. Works in Cloudflare Workers, Node.js, Deno, Bun.
+
+```typescript
+import { QhawayTrace, ConsoleStorage } from '@carloscortezcloud/qhaway/trace';
+
+const trace = new QhawayTrace(new ConsoleStorage(), { agent_id: 'my-agent' });
+
+const wrapped = trace.wrap(myLlmCall, { model: 'gpt-4o', provider: 'openai', user_id: 'abc' });
+const result = await wrapped(prompt);
+
+// Console output:
+// [Qhaway] ✓ gpt-4o (openai) | $0.00063 | 150→42 tok | 1234ms | user=abc
+```
+
+## Install
 
 ```bash
 npm install @carloscortezcloud/qhaway
+```
+
+## Quick Start
+
+```typescript
+import { QhawayTrace, ConsoleStorage } from '@carloscortezcloud/qhaway/trace';
+
+const trace = new QhawayTrace(new ConsoleStorage(), { agent_id: 'my-agent' });
+const wrapped = trace.wrap(myLlmCall, { model: 'gpt-4o', provider: 'openai', user_id: 'abc' });
+const result = await wrapped(prompt);
 ```
 
 ## Modules
@@ -23,20 +72,6 @@ Qhaway is a single package with subpath exports — import only what you need:
 | `@carloscortezcloud/qhaway/otel` | OTLP/HTTP JSON exporter |
 | `@carloscortezcloud/qhaway/tinkuy` | Auto-instrument TinkuyAgent |
 
-## Quick Start
-
-```typescript
-import { QhawayTrace, ConsoleStorage } from '@carloscortezcloud/qhaway/trace';
-
-const trace = new QhawayTrace(new ConsoleStorage(), { agent_id: 'my-agent' });
-
-const wrapped = trace.wrap(myLlmCall, { model: 'gpt-4o', provider: 'openai', user_id: 'abc' });
-const result = await wrapped(prompt);
-
-// Console output:
-// [Qhaway] ✓ gpt-4o (openai) | $0.00063 | 150→42 tok | 1234ms | user=abc
-```
-
 ## Storage
 
 | Adapter | Best for | Import |
@@ -47,19 +82,11 @@ const result = await wrapped(prompt);
 
 ## Exporters
 
-- **OTEL** — Export spans to any OTLP collector (Honeycomb, Grafana Tempo, Datadog, SigNoz)
-- **Prometheus** — `GET /metrics` endpoint for Grafana dashboards
-- **MLflow** — Log cost/latency metrics as MLflow experiment runs
-
-## Grafana Dashboard
-
-Import `qhaway-dashboard.json` into Grafana (Cloud or OSS) to visualize:
-
-- Cost by model and user
-- Latency P99 over time
-- Token usage (input vs output)
-- Recent call log
-- Daily spend stat
+| Exporter | Destination |
+|----------|-------------|
+| **OTEL** | Any OTLP collector (Honeycomb, Grafana Tempo, Datadog, SigNoz) |
+| **Prometheus** | `GET /metrics` endpoint for Grafana dashboards |
+| **MLflow** | Log cost/latency metrics as MLflow experiment runs |
 
 ## Architecture
 
@@ -74,6 +101,35 @@ QhawayTrace.wrap(fn)
   └── GET /metrics → Prometheus → Grafana dashboard
 ```
 
+## Grafana Dashboard
+
+Import `qhaway-dashboard.json` into Grafana (Cloud or OSS) to visualize:
+- Cost by model and user
+- Latency P99 over time
+- Token usage (input vs output)
+- Recent call log
+- Daily spend summary
+
+## Ecosystem
+
+| Package | Role | npm |
+|---------|------|-----|
+| **Qhaway** | Agent obs (this) | `@carloscortezcloud/qhaway` |
+| **Styrr** | LLM router | `styrr` |
+| **Sayay** | Cost guardrails | GitHub |
+| **Tinkuy** | Agent framework | `@carloscortezcloud/tinkuy-agent` |
+| **TideRAG** | Edge RAG pipeline | `@carloscortezcloud/tiderag` |
+
 ## License
 
-Apache 2.0
+Apache 2.0 — see [LICENSE](LICENSE).
+
+---
+
+<p align="center">
+  Built by engineers who got tired of blind AI spending.<br>
+  <a href="https://github.com/breakingthecloud/tinkuylabs">Tinkuy Labs</a> · <a href="https://finoptix.dev">finoptix.dev</a>
+</p>
+<p align="center">
+  <sub>If you can't see the cost, you can't control it. Qhaway opens your eyes.</sub>
+</p>
