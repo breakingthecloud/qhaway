@@ -1,17 +1,17 @@
 # Qhaway — Agent Observability for Python
 
-`pip install qhaway` gives Python teams the same agent observability as the TypeScript SDK: auto-instrument LLM calls, track cost/latency/tokens per user/session, and export to the Qhaway HTTP API, OpenTelemetry, or a local SQLite database.
+`pip install qhaway-trace` gives Python teams the same agent observability as the TypeScript SDK: auto-instrument LLM calls, track cost/latency/tokens per user/session, and export to the Qhaway HTTP API, OpenTelemetry, or a local SQLite database.
 
 Zero required dependencies for core (`QhawayTrace` + storage). Framework adapters are optional extras.
 
 ## Install
 
 ```bash
-pip install qhaway                    # core
-pip install "qhaway[openai]"          # + OpenAI auto-instrumentation
-pip install "qhaway[anthropic]"       # + Anthropic auto-instrumentation
-pip install "qhaway[langchain]"       # + LangChain callback handler
-pip install "qhaway[dev]"             # + test deps
+pip install qhaway-trace               # core
+pip install "qhaway-trace[openai]"     # + OpenAI auto-instrumentation
+pip install "qhaway-trace[anthropic]"  # + Anthropic auto-instrumentation
+pip install "qhaway-trace[langchain]"  # + LangChain callback handler
+pip install "qhaway-trace[dev]"        # + test deps
 ```
 
 ## Quick Start

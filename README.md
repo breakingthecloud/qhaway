@@ -94,7 +94,7 @@ Qhaway is a single package with subpath exports — import only what you need:
 ## Python SDK
 
 ```bash
-pip install qhaway
+pip install qhaway-trace
 ```
 
 ```python
