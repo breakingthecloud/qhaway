@@ -1,6 +1,6 @@
 {
   "name": "@carloscortezcloud/qhaway",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "description": "Agent observability. Trace, cost, OTEL, Tinkuy plugin — all in one package.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -31,6 +31,10 @@
     "./mlflow": {
       "types": "./dist/mlflow/index.d.ts",
       "import": "./dist/mlflow/index.js"
+    },
+    "./alerts": {
+      "types": "./dist/alerts/index.d.ts",
+      "import": "./dist/alerts/index.js"
     }
   },
   "scripts": {

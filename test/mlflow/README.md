@@ -173,5 +173,17 @@ Sessions: session-demo-1, session-demo-2
 
 - **MemoryStorage + MLflow:** Use `CompositeStorage` to chain MLflow with MemoryStorage (for `serveMetrics`) and D1 (for persistence)
 - **Batch size:** Adjust `batchSize` to balance latency vs API calls (default: 10)
-- **Authentication:** MLflow supports token auth via `trackingUri` header or `?token=` param
-- **Databricks MLflow:** Use your Databricks workspace URL + token as `trackingUri`
+- **Authentication:** MLflow supports token auth via `token` config (sends `Authorization: Bearer <token>`)
+- **Databricks MLflow:** Use your Databricks workspace URL + token as `trackingUri`:
+
+```ts
+const exporter = new QhawayMLflow({
+  trackingUri: 'https://dbc-XXXX.cloud.databricks.com',
+  token: env.DATABRICKS_TOKEN,   // Databricks personal access token
+  experimentName: 'agent-runs',
+});
+```
+
+- **D1 → MLflow batch cron:** See `examples/mlflow-batch-worker/` — a CF Worker cron that queries unexported spans from D1, exports them to MLflow grouped by session, and marks them `exported = 1`.
+
+## Production Considerations

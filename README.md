@@ -71,6 +71,8 @@ Qhaway is a single package with subpath exports — import only what you need:
 | `@carloscortezcloud/qhaway/cost` | Pricing DB + cost attribution |
 | `@carloscortezcloud/qhaway/otel` | OTLP/HTTP JSON exporter |
 | `@carloscortezcloud/qhaway/tinkuy` | Auto-instrument TinkuyAgent |
+| `@carloscortezcloud/qhaway/mlflow` | MLflow metrics exporter |
+| `@carloscortezcloud/qhaway/alerts` | Threshold alerts (Slack/webhook/email/PagerDuty) |
 
 ## Storage
 
@@ -87,6 +89,23 @@ Qhaway is a single package with subpath exports — import only what you need:
 | **OTEL** | Any OTLP collector (Honeycomb, Grafana Tempo, Datadog, SigNoz) |
 | **Prometheus** | `GET /metrics` endpoint for Grafana dashboards |
 | **MLflow** | Log cost/latency metrics as MLflow experiment runs |
+| **Alerts** | Threshold rules → Slack/webhook/email/PagerDuty with cooldown |
+
+## Python SDK
+
+```bash
+pip install qhaway
+```
+
+```python
+from qhaway import QhawayTrace, console_storage
+from qhaway.integrations import OpenAIPatch
+
+trace = QhawayTrace(storage=console_storage)
+OpenAIPatch.apply(trace)  # auto-instrument all OpenAI calls
+```
+
+See [python/README.md](python/README.md) for OpenAI, LangChain, Anthropic, and FastAPI examples.
 
 ## Architecture
 

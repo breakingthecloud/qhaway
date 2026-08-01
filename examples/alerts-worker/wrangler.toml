@@ -1,0 +1,11 @@
+name = "qhaway-alerts"
+main = "src/index.ts"
+compatibility_date = "2026-07-31"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "qhaway"
+database_id = "YOUR_D1_DATABASE_ID"
+
+[triggers]
+crons = ["*/5 * * * *"]

@@ -3,3 +3,10 @@ dist
 .wrangler
 *.tsbuildinfo
 .npmrc
+__pycache__
+*.pyc
+*.egg-info
+.pytest_cache
+build/
+python/dist/
+qhaway.db

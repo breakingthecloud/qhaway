@@ -4,12 +4,14 @@ import { MlflowClient, type MlflowConfig, type MlflowRunInfo } from './client.js
 export interface QhawayMLflowConfig extends MlflowConfig {
   experimentName?: string;
   batchSize?: number;
+  qhawayVersion?: string;
 }
 
 export class QhawayMLflow {
   private client: MlflowClient;
   private experimentName: string;
   private batchSize: number;
+  private qhawayVersion: string;
   private pendingSpans: QhawaySpan[] = [];
   private experimentId: string | null = null;
 
@@ -17,6 +19,7 @@ export class QhawayMLflow {
     this.client = new MlflowClient(config);
     this.experimentName = config.experimentName ?? 'qhaway-agent-runs';
     this.batchSize = config.batchSize ?? 10;
+    this.qhawayVersion = config.qhawayVersion ?? '0.9.0';
   }
 
   async write(span: QhawaySpan): Promise<void> {
@@ -85,7 +88,7 @@ export class QhawayMLflow {
         this.client.logMetric(runInfo.runId, 'failed_calls', failCount),
         this.client.logParam(runInfo.runId, 'models', modelsUsed.join(',')),
         this.client.logParam(runInfo.runId, 'tools', toolsUsed.join(',')),
-        this.client.setTag(runInfo.runId, 'qhaway_version', '0.7.0'),
+        this.client.setTag(runInfo.runId, 'qhaway_version', this.qhawayVersion),
         first.session_id && this.client.setTag(runInfo.runId, 'session_id', first.session_id),
         first.agent_id && this.client.setTag(runInfo.runId, 'agent_name', first.agent_id),
       ].filter(Boolean));

@@ -16,3 +16,7 @@ export type { OtelConfig } from './otel/index.js';
 
 export { serveMetrics } from './serve.js';
 export type { ServeMetricsConfig } from './serve.js';
+
+export { AlertEngine, DEFAULT_ALERT_RULES, loadRulesFromD1, createCronWorker, runOnce } from './alerts/index.js';
+export type { AlertRule, AlertChannel, AlertEvaluation, AlertFired, AlertMetric, AlertCondition, AlertWindow } from './alerts/index.js';
+export { SlackChannel, WebhookChannel, EmailChannel, PagerDutyChannel, ConsoleChannel } from './alerts/index.js';

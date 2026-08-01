@@ -1,6 +1,8 @@
 export interface MlflowConfig {
   trackingUri: string;
   experimentName?: string;
+  token?: string;
+  headers?: Record<string, string>;
 }
 
 export interface MlflowRunInfo {
@@ -15,15 +17,29 @@ interface MlflowResponse {
 
 export class MlflowClient {
   private uri: string;
+  private headers: Record<string, string>;
 
   constructor(private config: MlflowConfig) {
     this.uri = config.trackingUri.replace(/\/+$/, '');
+    this.headers = {
+      'Content-Type': 'application/json',
+      ...config.headers,
+      ...(config.token ? { Authorization: `Bearer ${config.token}` } : {}),
+    };
+  }
+
+  private async request(path: string, body: unknown): Promise<Response> {
+    return fetch(`${this.uri}${path}`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
   }
 
   async ensureExperiment(name: string): Promise<string> {
     const res = await fetch(`${this.uri}/api/2.0/mlflow/experiments/create`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: this.headers,
       body: JSON.stringify({ name }),
     });
     if (!res.ok) {
@@ -38,11 +54,7 @@ export class MlflowClient {
   }
 
   private async getExperimentId(name: string): Promise<string> {
-    const res = await fetch(`${this.uri}/api/2.0/mlflow/experiments/search`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ max_results: 100 }),
-    });
+    const res = await this.request('/api/2.0/mlflow/experiments/search', { max_results: 100 });
     if (!res.ok) throw new Error(`MLflow search experiments failed: ${res.status}`);
     const data = await res.json();
     const exp = data.experiments?.find((e: any) => e.name === name);
@@ -51,13 +63,9 @@ export class MlflowClient {
   }
 
   async createRun(experimentId: string, runName?: string): Promise<MlflowRunInfo> {
-    const res = await fetch(`${this.uri}/api/2.0/mlflow/runs/create`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        experiment_id: experimentId,
-        run_name: runName,
-      }),
+    const res = await this.request('/api/2.0/mlflow/runs/create', {
+      experiment_id: experimentId,
+      run_name: runName,
     });
     if (!res.ok) {
       const body = await res.text();
@@ -71,10 +79,8 @@ export class MlflowClient {
   }
 
   async logMetric(runId: string, key: string, value: number, step?: number): Promise<void> {
-    const res = await fetch(`${this.uri}/api/2.0/mlflow/runs/log-metric`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ run_id: runId, key, value, timestamp: Date.now(), step: step ?? 0 }),
+    const res = await this.request('/api/2.0/mlflow/runs/log-metric', {
+      run_id: runId, key, value, timestamp: Date.now(), step: step ?? 0,
     });
     if (!res.ok) {
       const body = await res.text();
@@ -83,10 +89,8 @@ export class MlflowClient {
   }
 
   async logParam(runId: string, key: string, value: string): Promise<void> {
-    const res = await fetch(`${this.uri}/api/2.0/mlflow/runs/log-parameter`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ run_id: runId, key, value }),
+    const res = await this.request('/api/2.0/mlflow/runs/log-parameter', {
+      run_id: runId, key, value,
     });
     if (!res.ok) {
       const body = await res.text();
@@ -95,10 +99,8 @@ export class MlflowClient {
   }
 
   async setTag(runId: string, key: string, value: string): Promise<void> {
-    const res = await fetch(`${this.uri}/api/2.0/mlflow/runs/set-tag`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ run_id: runId, key, value }),
+    const res = await this.request('/api/2.0/mlflow/runs/set-tag', {
+      run_id: runId, key, value,
     });
     if (!res.ok) {
       const body = await res.text();
@@ -107,10 +109,8 @@ export class MlflowClient {
   }
 
   async updateRun(runId: string, status: 'RUNNING' | 'FINISHED' | 'FAILED' = 'FINISHED'): Promise<void> {
-    const res = await fetch(`${this.uri}/api/2.0/mlflow/runs/update`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ run_id: runId, status }),
+    const res = await this.request('/api/2.0/mlflow/runs/update', {
+      run_id: runId, status,
     });
     if (!res.ok) {
       const body = await res.text();
