@@ -318,7 +318,7 @@
       const down = rated.filter((s) => s.rating === -1).length;
       summaryEl.innerHTML =
         '<span><b>' + filtered.length + '</b> spans</span>' +
-        '<span><b>$' + cost.toFixed(4)</b> cost</span>' +
+        '<span><b>$' + cost.toFixed(4) + '</b> cost</span>' +
         '<span><b>' + lat + 'ms</b> latency</span>' +
         '<span><b>' + failed + '</b> failed</span>' +
         '<span><b>' + up + '&nbsp;UP / ' + down + '&nbsp;DOWN</b> ratings</span>';

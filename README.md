@@ -143,13 +143,58 @@ Import promptfoo output directly — `parsePromptfooOutput(json)` converts `resu
 
 ## Trace Viewer UI
 
-Standalone, dependency-free HTML viewer for agent traces — no Grafana Tempo or LangSmith required. Open `ui/index.html` with a spans endpoint:
+Standalone, dependency-free HTML viewer for agent traces — no Grafana Tempo or LangSmith required. It renders session → iteration → tool-call trees, colors expensive spans red, filters by model/agent/date/success, and shows feedback ratings.
+
+### Run locally with demo data
+
+```bash
+cd qhaway
+python3 -m http.server 4173 --directory ui
+```
+
+Open [http://localhost:4173/index.html?endpoint=/demo-data.json](http://localhost:4173/index.html?endpoint=/demo-data.json) — `demo-data.json` ships realistic spans (sessions, tool calls, failures, ratings).
+
+### Point at your own spans
+
+Any URL returning `QhawaySpan[]` as JSON works:
 
 ```
 open ui/index.html?endpoint=https://my-agent.example.com/spans
 ```
 
-It renders session → iteration → tool-call trees, colors expensive spans red, and filters by model/agent/date/success. Programmatic API via `@carloscortezcloud/qhaway/ui` (`buildTraceTree`, `filterSpans`, `getUiApi`).
+On Cloudflare Workers, serve from D1/KV with a tiny route:
+
+```typescript
+import { D1Storage } from '@carloscortezcloud/qhaway/trace';
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    if (url.pathname === '/spans') {
+      const storage = new D1Storage(env.QHAWAY_DB);
+      return Response.json(await storage.query({}, 500));
+    }
+  },
+};
+```
+
+### Programmatic API
+
+Tree-building and filtering are exported from the npm package:
+
+```typescript
+import { getUiApi, buildTraceTree, costColor } from '@carloscortezcloud/qhaway/ui';
+
+const api = getUiApi(storage); // or getUiApi('https://.../spans')
+const spans = await api.loadSpans({ model: 'gpt-4o' });
+const tree = buildTraceTree(spans);
+
+for (const node of tree) {
+  console.log(node.label, costColor(node.costUsd));
+}
+```
+
+Full guide (data format, inject spans without a server, features): [`ui/README.md`](ui/README.md).
 
 ## Python SDK
 
