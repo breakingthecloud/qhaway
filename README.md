@@ -73,6 +73,8 @@ Qhaway is a single package with subpath exports — import only what you need:
 | `@carloscortezcloud/qhaway/tinkuy` | Auto-instrument TinkuyAgent |
 | `@carloscortezcloud/qhaway/mlflow` | MLflow metrics exporter |
 | `@carloscortezcloud/qhaway/alerts` | Threshold alerts (Slack/webhook/email/PagerDuty) |
+| `@carloscortezcloud/qhaway/eval` | Eval run tagging + promptfoo import + eval metrics |
+| `@carloscortezcloud/qhaway/ui` | Trace viewer tree + filters (feeds `ui/index.html`) |
 
 ## Storage
 
@@ -90,6 +92,64 @@ Qhaway is a single package with subpath exports — import only what you need:
 | **Prometheus** | `GET /metrics` endpoint for Grafana dashboards |
 | **MLflow** | Log cost/latency metrics as MLflow experiment runs |
 | **Alerts** | Threshold rules → Slack/webhook/email/PagerDuty with cooldown |
+
+## Feedback Loop
+
+Correlate user feedback (thumbs up/down) with cost, latency, and model. Attach a `rating` to any span:
+
+```typescript
+import { QhawayTrace, MemoryStorage, aggregateRating, ratingStats } from '@carloscortezcloud/qhaway';
+
+const trace = new QhawayTrace(new MemoryStorage());
+
+const wrapped = trace.wrap(myLlmCall, {
+  model: 'gpt-4o',
+  provider: 'openai',
+  session_id: 'ses-1',
+  rating: 1, // thumbs up — or -1 for down, 0 for neutral
+});
+```
+
+`rating` flows through every storage adapter (D1/KV/Console) and the Prometheus endpoint exposes `qhaway_rating_total{model, rating}` and `qhaway_cost_by_rating_total{rating}`. The Grafana dashboard includes a **Satisfaction vs Cost** scatter panel.
+
+```typescript
+import { aggregateRating } from '@carloscortezcloud/qhaway';
+
+const spans = await storage.query();
+const byRating = aggregateRating(spans);
+// [{ model: 'gpt-4o', rating: -1, calls: 3, costUsd: 0.15, avgLatencyMs: 412, ... }]
+
+const stats = ratingStats(spans);
+// { thumbsUp: 40, thumbsDown: 7, avgCostPerThumbsDown: 0.09, thumbsDownRate: 0.15 }
+```
+
+Wire it to a Tinkuy feedback hook: on thumbs down, record a span with `rating: -1` (see `examples/feedback-wiring.ts`).
+## Agent Evaluations
+
+Tag eval cases with an `eval_run_id`, then compare cost vs score across models and runs:
+
+```typescript
+import { labelEvalRun, aggregateEvalRuns, generateEvalMetrics } from '@carloscortezcloud/qhaway/eval';
+
+const tagged = labelEvalRun(span, 'run-7', { score: 0.9, pass: true });
+
+const runs = aggregateEvalRuns(spans);
+// [{ eval_run_id: 'run-7', model: 'gpt-4o', passRate: 0.85, costPerScorePoint: 0.02, ... }]
+
+const prom = generateEvalMetrics(spans); // qhaway_eval_run_* metrics for Grafana
+```
+
+Import promptfoo output directly — `parsePromptfooOutput(json)` converts `results` into labeled spans, so you can drop eval suites from promptfoo/LangChain into the same dashboards (`qhaway-eval-dashboard.json`). See `examples/eval-comparison.ts`.
+
+## Trace Viewer UI
+
+Standalone, dependency-free HTML viewer for agent traces — no Grafana Tempo or LangSmith required. Open `ui/index.html` with a spans endpoint:
+
+```
+open ui/index.html?endpoint=https://my-agent.example.com/spans
+```
+
+It renders session → iteration → tool-call trees, colors expensive spans red, and filters by model/agent/date/success. Programmatic API via `@carloscortezcloud/qhaway/ui` (`buildTraceTree`, `filterSpans`, `getUiApi`).
 
 ## Python SDK
 

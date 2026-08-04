@@ -222,6 +222,20 @@ describe('Prometheus Metrics', () => {
     expect(output).toContain('# EOF');
     expect(output).not.toContain('qhaway_cost_total{');
   });
+
+  it('emits rating metrics from spans with rating', () => {
+    const rated = [
+      makeSpan({ model: 'gpt-4o', rating: 1, cost_usd: 0.01 }),
+      makeSpan({ model: 'gpt-4o', rating: -1, cost_usd: 0.05 }),
+      makeSpan({ model: 'gpt-4o-mini', rating: 0, cost_usd: 0.001 }),
+    ];
+    const output = generatePrometheusMetrics(rated);
+    expect(output).toContain('qhaway_rating_total{model="gpt-4o",rating="1"} 1');
+    expect(output).toContain('qhaway_rating_total{model="gpt-4o",rating="-1"} 1');
+    expect(output).toContain('qhaway_rating_total{model="gpt-4o-mini",rating="0"} 1');
+    expect(output).toContain('qhaway_cost_by_rating_total{rating="1"} 0.01');
+    expect(output).toContain('qhaway_cost_by_rating_total{rating="-1"} 0.05');
+  });
 });
 
 describe('Edge cases', () => {

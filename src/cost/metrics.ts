@@ -7,6 +7,8 @@ export interface PrometheusMetrics {
     tokensInputByModel: Record<string, number>;
     tokensOutputByModel: Record<string, number>;
     callsByModel: Record<string, { success: number; failure: number }>;
+    ratingByModel: Record<string, { '1': number; '-1': number; '0': number }>;
+    costByRating: Record<string, number>;
   };
   histograms: {
     latencyByModel: Record<string, number[]>;
@@ -62,6 +64,27 @@ export function generatePrometheusMetrics(spans: QhawaySpan[]): string {
   }
 
   lines.push('');
+  lines.push('# HELP qhaway_rating_total Total user feedback ratings by model and rating');
+  lines.push('# TYPE qhaway_rating_total counter');
+  for (const [model, ratings] of Object.entries(counters.ratingByModel)) {
+    for (const rating of ['1', '-1', '0']) {
+      const count = ratings[rating as keyof typeof ratings];
+      if (count > 0) {
+        lines.push(`qhaway_rating_total{model="${model}",rating="${rating}"} ${count}`);
+      }
+    }
+  }
+
+  lines.push('');
+  lines.push('# HELP qhaway_cost_by_rating_total Cost attributed to rated calls by rating');
+  lines.push('# TYPE qhaway_cost_by_rating_total counter');
+  for (const [rating, cost] of Object.entries(counters.costByRating)) {
+    if (cost > 0) {
+      lines.push(`qhaway_cost_by_rating_total{rating="${rating}"} ${cost}`);
+    }
+  }
+
+  lines.push('');
   lines.push('# EOF');
   return lines.join('\n');
 }
@@ -71,6 +94,8 @@ export function computeMetrics(spans: QhawaySpan[]): PrometheusMetrics {
   const tokensInputByModel: Record<string, number> = {};
   const tokensOutputByModel: Record<string, number> = {};
   const callsByModel: Record<string, { success: number; failure: number }> = {};
+  const ratingByModel: Record<string, { '1': number; '-1': number; '0': number }> = {};
+  const costByRating: Record<string, number> = {};
   const latencyByModel: Record<string, number[]> = {};
 
   for (const span of spans) {
@@ -83,6 +108,12 @@ export function computeMetrics(spans: QhawaySpan[]): PrometheusMetrics {
     if (span.success) callsByModel[m].success++;
     else callsByModel[m].failure++;
 
+    if (span.rating !== undefined) {
+      if (!ratingByModel[m]) ratingByModel[m] = { '1': 0, '-1': 0, '0': 0 };
+      ratingByModel[m][String(span.rating) as '1' | '-1' | '0']++;
+      costByRating[String(span.rating)] = (costByRating[String(span.rating)] || 0) + span.cost_usd;
+    }
+
     if (!latencyByModel[m]) latencyByModel[m] = [];
     latencyByModel[m].push(span.latency_ms);
   }
@@ -94,6 +125,8 @@ export function computeMetrics(spans: QhawaySpan[]): PrometheusMetrics {
       tokensInputByModel,
       tokensOutputByModel,
       callsByModel,
+      ratingByModel,
+      costByRating: roundAll(costByRating, 6),
     },
     histograms: { latencyByModel },
   };

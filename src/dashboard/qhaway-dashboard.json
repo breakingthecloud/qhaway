@@ -244,6 +244,59 @@
       "options": {
         "showHeader": true
       }
+    },
+    {
+      "title": "Satisfaction vs Cost",
+      "type": "scatter",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-uid"
+      },
+      "targets": [
+        {
+          "expr": "sum by(rating) (qhaway_cost_by_rating_total)",
+          "legendFormat": "Cost by rating {{rating}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by(rating) (qhaway_rating_total)",
+          "legendFormat": "Rating count {{rating}}",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "showViz": true,
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "scatter": {
+          "mode": "xy"
+        },
+        "xAxis": {
+          "mode": "series",
+          "name": "Rating"
+        },
+        "yAxis": {
+          "mode": "series",
+          "name": "Cost (USD)"
+        }
+      }
     }
   ],
   "alerting": {

@@ -98,6 +98,7 @@ function spanToAttributes(s: QhawaySpan): Array<{ key: string; value: Record<str
     ...(s.agent_id ? [{ key: 'qhaway.agent_id', value: { stringValue: s.agent_id } }] : []),
     ...(s.session_id ? [{ key: 'qhaway.session_id', value: { stringValue: s.session_id } }] : []),
     ...(s.tool_name ? [{ key: 'qhaway.tool_name', value: { stringValue: s.tool_name } }] : []),
+    ...(s.rating !== undefined ? [{ key: 'qhaway.rating', value: { intValue: String(s.rating) } }] : []),
   ];
   return attrs;
 }

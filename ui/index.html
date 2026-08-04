@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Qhaway — Trace Viewer</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --border: #262a33;
+      --text: #e6e8ee;
+      --muted: #8b91a0;
+      --green: #10b981;
+      --yellow: #eab308;
+      --red: #ef4444;
+      --purple: #8b5cf6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px;
+      line-height: 1.5;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    header h1 { font-size: 20px; }
+    header .badge {
+      background: var(--purple);
+      color: #fff;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+    .summary {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 16px;
+      color: var(--muted);
+    }
+    .summary b { color: var(--text); }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .filters label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--muted); }
+    .filters input, .filters select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-family: inherit;
+      min-width: 140px;
+    }
+    .filters button {
+      align-self: flex-end;
+      background: var(--purple);
+      border: 0;
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .empty { color: var(--muted); padding: 40px; text-align: center; }
+    .tree { display: flex; flex-direction: column; gap: 8px; }
+    .node {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .node > .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .node > .row:hover { background: rgba(139, 92, 246, 0.08); }
+    .chevron { color: var(--muted); width: 14px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .label { font-weight: 600; }
+    .meta { color: var(--muted); font-size: 12px; margin-left: auto; }
+    .children { margin-left: 24px; border-left: 1px solid var(--border); padding-left: 8px; display: none; }
+    .node.open > .children { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; padding-bottom: 8px; }
+    .type-tag {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .rating { font-size: 12px; }
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+    .toolbar button {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+    }
+    .toolbar button:hover { color: var(--text); border-color: var(--purple); }
+    .legend {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .legend span { display: flex; align-items: center; gap: 6px; }
+    .error { color: var(--red); margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Qhaway Trace Viewer</h1>
+    <span class="badge">UI</span>
+  </header>
+
+  <div class="legend">
+    <span><span class="dot" style="background:#ef4444"></span> expensive (&gt; $0.05)</span>
+    <span><span class="dot" style="background:#eab308"></span> slow-ish (&gt; $0.01)</span>
+    <span><span class="dot" style="background:#10b981"></span> cheap</span>
+  </div>
+
+  <div class="summary" id="summary"></div>
+  <div class="error" id="error" hidden></div>
+
+  <div class="filters">
+    <label>Model
+      <select id="filter-model"><option value="">All</option></select>
+    </label>
+    <label>Agent
+      <select id="filter-agent"><option value="">All</option></select>
+    </label>
+    <label>Success
+      <select id="filter-success">
+        <option value="">All</option>
+        <option value="true">Success</option>
+        <option value="false">Failed</option>
+      </select>
+    </label>
+    <label>From
+      <input type="date" id="filter-from" />
+    </label>
+    <label>To
+      <input type="date" id="filter-to" />
+    </label>
+    <label>Tool
+      <input type="text" id="filter-tool" placeholder="tool name (optional)" />
+    </label>
+    <button id="btn-apply">Apply</button>
+  </div>
+
+  <div class="toolbar">
+    <button id="btn-expand">Expand all</button>
+    <button id="btn-collapse">Collapse all</button>
+  </div>
+
+  <div class="tree" id="tree"></div>
+  <div class="empty" id="empty" hidden>No spans found. Load spans via ?endpoint=&lt;json-url&gt; or window.__QHAWAY_SPANS__.</div>
+
+  <script>
+    // Cost color coding thresholds (mirrors src/ui/tree.ts)
+    const COST_RED = 0.05;
+    const COST_YELLOW = 0.01;
+
+    function costColor(costUsd) {
+      if (costUsd > COST_RED) return '#ef4444';
+      if (costUsd > COST_YELLOW) return '#eab308';
+      return '#10b981';
+    }
+
+    function nodeType(span) {
+      if (span.tool_name === 'agent.run') return 'agent';
+      if (span.tool_name) return 'tool';
+      return 'iteration';
+    }
+
+    function labelFor(span) {
+      if (span.tool_name === 'agent.run') return 'agent.run';
+      if (span.tool_name) return 'tool ' + span.tool_name;
+      return span.model + ' (' + span.provider + ')';
+    }
+
+    function buildTree(spans) {
+      const bySession = new Map();
+      const standalone = [];
+      for (const span of spans) {
+        if (span.session_id) {
+          if (!bySession.has(span.session_id)) bySession.set(span.session_id, []);
+          bySession.get(span.session_id).push(span);
+        } else {
+          standalone.push(span);
+        }
+      }
+
+      const roots = [];
+      for (const [sid, sessionSpans] of bySession) {
+        const children = sessionSpans.map((s) => makeNode(s, 'session-child'));
+        roots.push({
+          id: 'session-' + sid,
+          type: 'session',
+          label: 'session ' + sid.slice(0, 8),
+          children,
+          span: sessionSpans[0],
+          costUsd: sessionSpans.reduce((a, s) => a + s.cost_usd, 0),
+          latencyMs: sessionSpans.reduce((a, s) => a + s.latency_ms, 0),
+        });
+      }
+      for (const span of standalone) {
+        roots.push(makeNode(span, 'root'));
+      }
+      roots.sort((a, b) => b.latencyMs - a.latencyMs);
+      return roots;
+    }
+
+    function makeNode(span) {
+      return {
+        id: span.id,
+        type: nodeType(span),
+        label: labelFor(span),
+        children: [],
+        span,
+        costUsd: span.cost_usd,
+        latencyMs: span.latency_ms,
+      };
+    }
+
+    function fmtUsd(c) { return c > 0 ? '$' + c.toFixed(4) : '$0'; }
+    function fmtMs(ms) { return ms + 'ms'; }
+    function fmtTs(ts) { return ts ? ts.replace('T', ' ').slice(0, 19) : ''; }
+
+    function renderNode(node, container) {
+      const el = document.createElement('div');
+      el.className = 'node' + (node.children.length > 0 ? '' : '');
+      el.dataset.nodeId = node.id;
+
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML =
+        '<span class="chevron">' + (node.children.length ? '&#9654;' : '') + '</span>' +
+        '<span class="dot" style="background:' + costColor(node.costUsd) + '"></span>' +
+        '<span class="type-tag">' + node.type + '</span>' +
+        '<span class="label">' + esc(node.label) + '</span>' +
+        ratingTag(node.span) +
+        '<span class="meta">' +
+          (node.span && !node.span.success ? '&#10007; ' : '') +
+          fmtUsd(node.costUsd) + ' | ' + fmtMs(node.latencyMs) +
+          (node.span ? ' | ' + fmtTs(node.span.timestamp) : '') +
+        '</span>';
+
+      if (node.children.length > 0) {
+        row.addEventListener('click', () => el.classList.toggle('open'));
+      }
+      el.appendChild(row);
+
+      if (node.children.length > 0) {
+        const children = document.createElement('div');
+        children.className = 'children';
+        node.children.forEach((child) => renderNode(child, children));
+        el.appendChild(children);
+      }
+
+      container.appendChild(el);
+    }
+
+    function ratingTag(span) {
+      if (!span || span.rating === undefined) return '';
+      const icon = span.rating > 0 ? 'UP' : (span.rating < 0 ? 'DOWN' : 'NEUTRAL');
+      return '<span class="rating">[' + icon + ']</span>';
+    }
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    let allSpans = [];
+
+    function render(filtered) {
+      const treeEl = document.getElementById('tree');
+      const emptyEl = document.getElementById('empty');
+      const summaryEl = document.getElementById('summary');
+      treeEl.innerHTML = '';
+      emptyEl.hidden = filtered.length > 0;
+      treeEl.hidden = filtered.length === 0;
+
+      const cost = filtered.reduce((a, s) => a + s.cost_usd, 0);
+      const lat = filtered.reduce((a, s) => a + s.latency_ms, 0);
+      const failed = filtered.filter((s) => !s.success).length;
+      const rated = filtered.filter((s) => s.rating !== undefined);
+      const up = rated.filter((s) => s.rating === 1).length;
+      const down = rated.filter((s) => s.rating === -1).length;
+      summaryEl.innerHTML =
+        '<span><b>' + filtered.length + '</b> spans</span>' +
+        '<span><b>$' + cost.toFixed(4)</b> cost</span>' +
+        '<span><b>' + lat + 'ms</b> latency</span>' +
+        '<span><b>' + failed + '</b> failed</span>' +
+        '<span><b>' + up + '&nbsp;UP / ' + down + '&nbsp;DOWN</b> ratings</span>';
+
+      buildTree(filtered).forEach((root) => renderNode(root, treeEl));
+    }
+
+    function applyFilters() {
+      const model = document.getElementById('filter-model').value;
+      const agent = document.getElementById('filter-agent').value;
+      const success = document.getElementById('filter-success').value;
+      const from = document.getElementById('filter-from').value;
+      const to = document.getElementById('filter-to').value;
+      const tool = document.getElementById('filter-tool').value.trim();
+
+      const filtered = allSpans.filter((s) => {
+        if (model && s.model !== model) return false;
+        if (agent && s.agent_id !== agent) return false;
+        if (success !== '' && String(s.success) !== success) return false;
+        if (from && s.timestamp < from + 'T00:00:00') return false;
+        if (to && s.timestamp > to + 'T23:59:59') return false;
+        if (tool && !(s.tool_name || '').includes(tool)) return false;
+        return true;
+      });
+      render(filtered);
+    }
+
+    function populateSelects(spans) {
+      const models = [...new Set(spans.map((s) => s.model))].sort();
+      const agents = [...new Set(spans.map((s) => s.agent_id).filter(Boolean))].sort();
+      const modelSel = document.getElementById('filter-model');
+      const agentSel = document.getElementById('filter-agent');
+      models.forEach((m) => modelSel.add(new Option(m, m)));
+      agents.forEach((a) => agentSel.add(new Option(a, a)));
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error');
+      el.textContent = msg;
+      el.hidden = false;
+    }
+
+    async function load() {
+      const params = new URLSearchParams(window.location.search);
+      const endpoint = params.get('endpoint');
+
+      if (window.__QHAWAY_SPANS__ && Array.isArray(window.__QHAWAY_SPANS__)) {
+        allSpans = window.__QHAWAY_SPANS__;
+      } else if (endpoint) {
+        const res = await fetch(endpoint);
+        if (!res.ok) throw new Error('GET ' + endpoint + ' failed: ' + res.status);
+        allSpans = await res.json();
+      } else {
+        showError('No data source. Add ?endpoint=&lt;json-url&gt; to the URL or set window.__QHAWAY_SPANS__ before loading.');
+        return;
+      }
+
+      populateSelects(allSpans);
+      render(allSpans);
+    }
+
+    document.getElementById('btn-apply').addEventListener('click', applyFilters);
+    document.getElementById('btn-expand').addEventListener('click', () => {
+      document.querySelectorAll('.node').forEach((n) => n.classList.add('open'));
+    });
+    document.getElementById('btn-collapse').addEventListener('click', () => {
+      document.querySelectorAll('.node').forEach((n) => n.classList.remove('open'));
+    });
+
+    load().catch((e) => showError('Failed to load: ' + e.message));
+  </script>
+</body>
+</html>

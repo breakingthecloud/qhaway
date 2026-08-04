@@ -13,12 +13,14 @@ export class ConsoleStorage implements QhawayStorage {
       span.tool_name && `tool=${span.tool_name}`,
       span.session_id && `session=${span.session_id}`,
     ].filter(Boolean).join(' ');
+    const rating = span.rating === undefined ? '' : ` | ${span.rating > 0 ? '[+]' : span.rating < 0 ? '[-]' : '[0]'}`;
 
     console.log(
       `[Qhaway] ${icon} ${span.model} (${span.provider})`
       + `${cost}${tokens}`
       + ` | ${span.latency_ms}ms`
       + (tags ? ` | ${tags}` : '')
+      + rating
       + (span.error ? ` | ERROR: ${span.error}` : ''),
     );
   }

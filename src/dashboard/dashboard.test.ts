@@ -23,8 +23,8 @@ describe('qhaway-dashboard.json', () => {
     expect(panel.datasource.uid).toBe('prometheus-uid');
   });
 
-  it('has 6 panels', () => {
-    expect(dashboard.panels).toHaveLength(6);
+  it('has 7 panels', () => {
+    expect(dashboard.panels).toHaveLength(7);
   });
 
   it('panels have expected titles', () => {
@@ -35,6 +35,15 @@ describe('qhaway-dashboard.json', () => {
     expect(titles).toContain('Cost by User');
     expect(titles).toContain('Token Usage (Input vs Output)');
     expect(titles).toContain('LLM Calls');
+    expect(titles).toContain('Satisfaction vs Cost');
+  });
+
+  it('Satisfaction vs Cost is a scatter panel referencing rating metrics', () => {
+    const panel = dashboard.panels.find((p: any) => p.title === 'Satisfaction vs Cost');
+    expect(panel.type).toBe('scatter');
+    const exprs = panel.targets.map((t: any) => t.expr).join(' ');
+    expect(exprs).toContain('qhaway_cost_by_rating_total');
+    expect(exprs).toContain('qhaway_rating_total');
   });
 
   it('Daily Spend has USD unit and thresholds', () => {

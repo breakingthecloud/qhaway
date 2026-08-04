@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS qhaway_spans (
   tool_name TEXT,
   success INTEGER NOT NULL DEFAULT 1,
   error TEXT,
+  rating INTEGER,
   metadata TEXT
 );
 
@@ -37,20 +38,25 @@ CREATE INDEX IF NOT EXISTS idx_spans_session ON qhaway_spans(session_id);
 CREATE INDEX IF NOT EXISTS idx_spans_model ON qhaway_spans(model);
 `;
 
+export const MIGRATION_ADD_RATING_SQL = `
+ALTER TABLE qhaway_spans ADD COLUMN rating INTEGER;
+`;
+
 export class D1Storage implements QhawayStorage {
   constructor(private db: D1Database) {}
 
   async write(span: QhawaySpan): Promise<void> {
     const stmt = this.db.prepare(`
       INSERT INTO qhaway_spans (id, timestamp, model, provider, latency_ms, tokens_in, tokens_out,
-        cost_usd, user_id, session_id, agent_id, tool_name, success, error, metadata)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        cost_usd, user_id, session_id, agent_id, tool_name, success, error, rating, metadata)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       span.id, span.timestamp, span.model, span.provider, span.latency_ms,
       span.tokens_in, span.tokens_out, span.cost_usd,
       span.user_id ?? null, span.session_id ?? null,
       span.agent_id ?? null, span.tool_name ?? null,
       span.success ? 1 : 0, span.error ?? null,
+      span.rating ?? null,
       span.metadata ? JSON.stringify(span.metadata) : null,
     );
     await stmt.run();
@@ -107,6 +113,7 @@ function rowToSpan(row: Record<string, unknown>): QhawaySpan {
     tool_name: row.tool_name as string | undefined,
     success: (row.success as number) === 1,
     error: row.error as string | undefined,
+    rating: row.rating as 1 | -1 | 0 | undefined,
     metadata: row.metadata ? JSON.parse(row.metadata as string) : undefined,
   };
 }

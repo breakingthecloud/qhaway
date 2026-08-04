@@ -15,3 +15,5 @@ export {
 export type { CostAggregation } from './aggregator.js';
 export { generatePrometheusMetrics, computeMetrics } from './metrics.js';
 export type { PrometheusMetrics } from './metrics.js';
+export { aggregateRating, ratingStats } from './rating.js';
+export type { Rating, RatingAggregation, RatingStats } from './rating.js';

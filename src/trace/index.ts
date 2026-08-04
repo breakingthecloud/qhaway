@@ -13,6 +13,7 @@ export interface QhawaySpan {
   tool_name?: string;
   success: boolean;
   error?: string;
+  rating?: 1 | -1 | 0;
   metadata?: Record<string, unknown>;
 }
 
@@ -70,6 +71,7 @@ export class QhawayTrace {
       tool_name: span.tool_name,
       success: span.success ?? true,
       error: span.error,
+      rating: span.rating,
       metadata: span.metadata,
     };
     await this.storage.write(full);

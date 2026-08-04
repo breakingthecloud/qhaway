@@ -1,0 +1,200 @@
+{
+  "uid": "qhaway-eval-dashboard",
+  "title": "Qhaway \u2014 Agent Eval Overview",
+  "description": "Cross evaluation quality (pass/fail, score) with cost and latency per eval run and model. Requires a Prometheus data source pointing to the Qhaway Worker /metrics endpoint.",
+  "tags": [
+    "qhaway",
+    "eval",
+    "llm",
+    "cost"
+  ],
+  "schemaVersion": 39,
+  "version": 1,
+  "timezone": "browser",
+  "editable": true,
+  "refresh": "30s",
+  "panels": [
+    {
+      "title": "Eval Pass Rate",
+      "type": "stat",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-uid"
+      },
+      "targets": [
+        {
+          "expr": "sum(qhaway_eval_run_passed_total) / sum(qhaway_eval_run_calls_total)",
+          "legendFormat": "Pass rate",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.5
+              },
+              {
+                "color": "green",
+                "value": 0.8
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "background",
+        "justifyMode": "center",
+        "orientation": "auto"
+      }
+    },
+    {
+      "title": "Cost per Score Point",
+      "type": "barchart",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 6,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-uid"
+      },
+      "targets": [
+        {
+          "expr": "topk(10, sum by(model) (qhaway_eval_run_cost_total) / clamp_min(sum by(model) (qhaway_eval_run_score), 0.001))",
+          "legendFormat": "{{model}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "usd",
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      },
+      "options": {
+        "orientation": "auto",
+        "groupWidth": 0.7,
+        "showValue": "auto",
+        "legend": {
+          "showViz": true,
+          "placement": "right"
+        }
+      }
+    },
+    {
+      "title": "Cost vs Score by Model",
+      "type": "scatter",
+      "gridPos": {
+        "h": 8,
+        "w": 10,
+        "x": 14,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-uid"
+      },
+      "targets": [
+        {
+          "expr": "sum by(model) (qhaway_eval_run_cost_total)",
+          "legendFormat": "{{model}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by(model) (qhaway_eval_run_score)",
+          "legendFormat": "{{model}} score",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "showViz": true,
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        },
+        "scatter": {
+          "mode": "xy"
+        },
+        "xAxis": {
+          "mode": "series",
+          "name": "Cost (USD)"
+        },
+        "yAxis": {
+          "mode": "series",
+          "name": "Score"
+        }
+      }
+    },
+    {
+      "title": "Eval Run Comparison",
+      "type": "table",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-uid"
+      },
+      "targets": [
+        {
+          "expr": "qhaway_eval_run_score",
+          "legendFormat": "{{eval_run}} \u2014 {{model}} score",
+          "refId": "A",
+          "format": "table"
+        },
+        {
+          "expr": "qhaway_eval_run_cost_total",
+          "legendFormat": "{{eval_run}} \u2014 {{model}} cost",
+          "refId": "B",
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "align": "auto"
+          }
+        }
+      },
+      "options": {
+        "showHeader": true
+      }
+    }
+  ]
+}
