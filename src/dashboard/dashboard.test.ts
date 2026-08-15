@@ -23,8 +23,8 @@ describe('qhaway-dashboard.json', () => {
     expect(panel.datasource.uid).toBe('prometheus-uid');
   });
 
-  it('has 7 panels', () => {
-    expect(dashboard.panels).toHaveLength(7);
+  it('has 8 panels', () => {
+    expect(dashboard.panels).toHaveLength(8);
   });
 
   it('panels have expected titles', () => {
@@ -36,6 +36,14 @@ describe('qhaway-dashboard.json', () => {
     expect(titles).toContain('Token Usage (Input vs Output)');
     expect(titles).toContain('LLM Calls');
     expect(titles).toContain('Satisfaction vs Cost');
+    expect(titles).toContain('Budget Guardrails (Sayay)');
+  });
+
+  it('Budget Guardrails panel references sayay decisions metric', () => {
+    const panel = dashboard.panels.find((p: any) => p.title === 'Budget Guardrails (Sayay)');
+    expect(panel).toBeDefined();
+    expect(panel.type).toBe('barchart');
+    expect(panel.targets[0].expr).toContain('qhaway_sayay_decisions_total');
   });
 
   it('Satisfaction vs Cost is a scatter panel referencing rating metrics', () => {

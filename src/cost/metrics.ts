@@ -9,6 +9,7 @@ export interface PrometheusMetrics {
     callsByModel: Record<string, { success: number; failure: number }>;
     ratingByModel: Record<string, { '1': number; '-1': number; '0': number }>;
     costByRating: Record<string, number>;
+    sayayDecisions: Record<string, Record<string, number>>;
   };
   histograms: {
     latencyByModel: Record<string, number[]>;
@@ -85,6 +86,17 @@ export function generatePrometheusMetrics(spans: QhawaySpan[]): string {
   }
 
   lines.push('');
+  lines.push('# HELP qhaway_sayay_decisions_total Sayay budget guard decisions (allow/warn/degrade/block)');
+  lines.push('# TYPE qhaway_sayay_decisions_total counter');
+  for (const [user, actions] of Object.entries(counters.sayayDecisions)) {
+    for (const [action, count] of Object.entries(actions)) {
+      if (count > 0) {
+        lines.push(`qhaway_sayay_decisions_total{action="${action}",user="${user}"} ${count}`);
+      }
+    }
+  }
+
+  lines.push('');
   lines.push('# EOF');
   return lines.join('\n');
 }
@@ -96,6 +108,7 @@ export function computeMetrics(spans: QhawaySpan[]): PrometheusMetrics {
   const callsByModel: Record<string, { success: number; failure: number }> = {};
   const ratingByModel: Record<string, { '1': number; '-1': number; '0': number }> = {};
   const costByRating: Record<string, number> = {};
+  const sayayDecisions: Record<string, Record<string, number>> = {};
   const latencyByModel: Record<string, number[]> = {};
 
   for (const span of spans) {
@@ -114,6 +127,13 @@ export function computeMetrics(spans: QhawaySpan[]): PrometheusMetrics {
       costByRating[String(span.rating)] = (costByRating[String(span.rating)] || 0) + span.cost_usd;
     }
 
+    if (span.tool_name === 'sayay.check' && span.metadata?.action) {
+      const user = span.user_id || '';
+      const action = String(span.metadata.action);
+      if (!sayayDecisions[user]) sayayDecisions[user] = {};
+      sayayDecisions[user][action] = (sayayDecisions[user][action] || 0) + 1;
+    }
+
     if (!latencyByModel[m]) latencyByModel[m] = [];
     latencyByModel[m].push(span.latency_ms);
   }
@@ -127,6 +147,7 @@ export function computeMetrics(spans: QhawaySpan[]): PrometheusMetrics {
       callsByModel,
       ratingByModel,
       costByRating: roundAll(costByRating, 6),
+      sayayDecisions,
     },
     histograms: { latencyByModel },
   };

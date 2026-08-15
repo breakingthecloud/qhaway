@@ -236,6 +236,25 @@ describe('Prometheus Metrics', () => {
     expect(output).toContain('qhaway_cost_by_rating_total{rating="1"} 0.01');
     expect(output).toContain('qhaway_cost_by_rating_total{rating="-1"} 0.05');
   });
+
+  it('emits sayay decisions metric from sayay.check spans', () => {
+    const sayay = [
+      makeSpan({ model: 'budget-guard', tool_name: 'sayay.check', user_id: 'u1', metadata: { action: 'allow' } }),
+      makeSpan({ model: 'budget-guard', tool_name: 'sayay.check', user_id: 'u1', metadata: { action: 'block' } }),
+      makeSpan({ model: 'budget-guard', tool_name: 'sayay.check', user_id: 'u2', metadata: { action: 'degrade' } }),
+      makeSpan({ model: 'gpt-4o', tool_name: 'agent.run', user_id: 'u1' }),
+    ];
+    const m = computeMetrics(sayay);
+    expect(m.counters.sayayDecisions['u1']).toEqual({ allow: 1, block: 1 });
+    expect(m.counters.sayayDecisions['u2']).toEqual({ degrade: 1 });
+
+    const output = generatePrometheusMetrics(sayay);
+    expect(output).toContain('# HELP qhaway_sayay_decisions_total');
+    expect(output).toContain('qhaway_sayay_decisions_total{action="allow",user="u1"} 1');
+    expect(output).toContain('qhaway_sayay_decisions_total{action="block",user="u1"} 1');
+    expect(output).toContain('qhaway_sayay_decisions_total{action="degrade",user="u2"} 1');
+    expect(output).not.toContain('qhaway_sayay_decisions_total{action="run"');
+  });
 });
 
 describe('Edge cases', () => {

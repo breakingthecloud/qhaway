@@ -297,6 +297,64 @@
           "name": "Cost (USD)"
         }
       }
+    },
+    {
+      "title": "Budget Guardrails (Sayay)",
+      "type": "barchart",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus-uid"
+      },
+      "targets": [
+        {
+          "expr": "sum by(action) (qhaway_sayay_decisions_total)",
+          "legendFormat": "{{action}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "orientation": "auto",
+        "groupWidth": 0.7,
+        "showValue": "auto",
+        "legend": {
+          "showViz": true,
+          "placement": "bottom"
+        }
+      }
     }
   ],
   "alerting": {
